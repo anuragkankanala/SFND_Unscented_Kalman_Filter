@@ -175,6 +175,136 @@ void UKF::Prediction(double delta_t)
    * Modify the state vector, x_. Predict sigma points, the state, 
    * and the state covariance matrix.
    */
+
+  // //Generate Sigma Points - without augmentation
+  // MatrixXd sigma_points = MatrixXd(n_x_, 2 * n_x_ + 1);
+  // GenerateSigmaPoints(sigma_points);
+
+  //Generate Augmented Sigma Points
+  MatrixXd X_Sig_Aug = MatrixXd(n_aug_, 2 * n_aug_ + 1);
+  GenerateAugmentedSigmaPoints(X_Sig_Aug);
+
+  //Predict Sigma points by applying the process model
+  MatrixXd Xsig_pred = MatrixXd(n_x_, 2 * n_aug_ + 1);
+  PredictSigmaPoints(X_Sig_Aug, Xsig_pred, delta_t);
+
+  PredictMeanAndCovariance(Xsig_pred, x_, P_);
+}
+
+void UKF::PredictMeanAndCovariance(const Eigen::MatrixXd &sigma_points_predicted, Eigen::VectorXd &x_new, Eigen::MatrixXd &P_new)
+{
+  //predict new mean state
+  x_new.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; ++i)
+  {
+    x_new = x_new + weights_(i) * sigma_points_predicted.col(i);
+  }
+
+  // predicted state covariance matrix
+  P_new.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; ++i)
+  {
+    // state difference
+    VectorXd x_diff = sigma_points_predicted.col(i) - x_new;
+
+    // angle normalization
+    while (x_diff(3) > M_PI)
+      x_diff(3) -= 2. * M_PI;
+    while (x_diff(3) < -M_PI)
+      x_diff(3) += 2. * M_PI;
+
+    P_new = P_new + weights_(i) * x_diff * x_diff.transpose();
+  }
+}
+
+void UKF::PredictSigmaPoints(const Eigen::MatrixXd &sigma_points, Eigen::MatrixXd &sigma_points_predicted, float delta_t)
+{
+  for (int i = 0; i < 2 * n_aug_ + 1; i++)
+  {
+    double px = sigma_points(0, i);
+    double py = sigma_points(1, i);
+    double v = sigma_points(2, i);
+    double yaw = sigma_points(3, i);
+    double yaw_dot = sigma_points(4, i);
+    double nu_a = sigma_points(5, i);
+    double nu_yaw_dot_dot = sigma_points(6, i);
+
+    //predict state values
+    double px_p, py_p;
+
+    //check if yaw_dot is zero
+    if (fabs(yaw_dot) > std::numeric_limits<double>::epsilon())
+    {
+      px_p = px + v / yaw_dot * (sin(yaw + yaw_dot * delta_t) - sin(yaw));
+      py_p = py + v / yaw_dot * (cos(yaw) - cos(yaw + yaw_dot * delta_t));
+    }
+
+    else
+    {
+      px_p = px + v * delta_t * cos(yaw);
+      py_p = py + v * delta_t * sin(yaw);
+    }
+
+    double v_p = v;
+    double yaw_p = yaw + yaw_dot * delta_t;
+    double yawd_p = yaw_dot;
+
+    //add process noise
+    px_p = px_p + 0.5 * nu_a * delta_t * delta_t * cos(yaw);
+    py_p = py_p + 0.5 * nu_a * delta_t * delta_t * sin(yaw);
+    v_p = v_p + nu_a * delta_t;
+
+    yaw_p = yaw_p + 0.5 * nu_yaw_dot_dot * delta_t * delta_t;
+    yawd_p = yawd_p + nu_yaw_dot_dot * delta_t;
+
+    //fill the output matrix
+    sigma_points_predicted(0, i) = px_p;
+    sigma_points_predicted(1, i) = py_p;
+    sigma_points_predicted(2, i) = v_p;
+    sigma_points_predicted(3, i) = yaw_p;
+    sigma_points_predicted(4, i) = yawd_p;
+  }
+}
+
+void UKF::GenerateAugmentedSigmaPoints(Eigen::MatrixXd &sigma_points)
+{
+  VectorXd x_aug = VectorXd(n_aug_);         //augmented mean vector
+  MatrixXd P_aug = MatrixXd(n_aug_, n_aug_); //augmented state covairance matrix
+
+  x_aug.head(5) = x_;
+  x_aug(5) = 0;
+  x_aug(6) = 0;
+
+  P_aug.fill(0.0);
+  P_aug.topLeftCorner(5, 5) = P_;
+  P_aug(5, 5) = std_a_ * std_a_;
+  P_aug(6, 6) = std_yawdd_ * std_yawdd_;
+
+  // create square root matrix
+  MatrixXd L = P_aug.llt().matrixL();
+
+  sigma_points.col(0) = x_aug;
+  for (int i = 0; i < n_aug_; ++i)
+  {
+    sigma_points.col(i + 1) = x_aug + sqrt(lambda_ + n_aug_) * L.col(i);
+    sigma_points.col(i + 1 + n_aug_) = x_aug - sqrt(lambda_ + n_aug_) * L.col(i);
+  }
+}
+
+void UKF::GenerateSigmaPoints(Eigen::MatrixXd &sigma_points)
+{
+  //calculate square root of P
+  MatrixXd L = P_.llt().matrixL();
+
+  //set first columns to state vector x_
+  sigma_points.col(0) = x_;
+
+  //remaining sigma points
+  for (int i = 0; i < n_x_; i++)
+  {
+    sigma_points.col(i + 1) = x_ + sqrt(lambda_ + n_x_) * L.col(i);
+    sigma_points.col(i + 1 + n_x_) = x_ - sqrt(lambda_ + n_x_) * L.col(i);
+  }
 }
 
 void UKF::UpdateLidar(MeasurementPackage meas_package)

@@ -48,6 +48,35 @@ public:
    */
   void InitializeState(MeasurementPackage meas_package);
 
+  /**
+   * Generates Sigma Points for the Prediction Step
+   * @param sigma_points Reference to the matrix to populate the sigma points
+   */
+  void GenerateSigmaPoints(Eigen::MatrixXd &sigma_points);
+
+  /**
+   * Generates Augmented Sigma Points for the Prediction Step
+   * @param sigma_points Reference to the matrix to populate the sigma points
+   */
+  void GenerateAugmentedSigmaPoints(Eigen::MatrixXd &sigma_points);
+
+  /**
+   * Predicts the sigma points by applying the process model to the 
+   * generated sigma points.
+   * @param sigma_points Reference to the generated sigma points
+   * @param sigma_points_predicted Reference to the matrix to store the predicted points
+   * @param delta_t time diff between measurements
+   */
+  void PredictSigmaPoints(const Eigen::MatrixXd &sigma_points, Eigen::MatrixXd &sigma_points_predicted, float delta_t);
+
+  /**
+   * Predicts the new mean state and covariance matrices from the predicted sigma points
+   * @param sigma_points_predicted Reference to the predicted sigma points
+   * @param x_new Referece to the matrix to store the new mean state
+   * @param P_new Reference to the matrix to store the new covariance matrix
+   */
+  void PredictMeanAndCovariance(const Eigen::MatrixXd &sigma_points_predicted, Eigen::VectorXd &x_new, Eigen::MatrixXd &P_new);
+
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
 
