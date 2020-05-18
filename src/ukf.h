@@ -77,6 +77,21 @@ public:
    */
   void PredictMeanAndCovariance(const Eigen::MatrixXd &sigma_points_predicted, Eigen::VectorXd &x_new, Eigen::MatrixXd &P_new);
 
+  /**
+   * Transforms the predicted state into the radar measurement space.
+   * @param z_pred Reference to vector to store the mean predicted measurement
+   * @param S Reference to the matrix to store measurement covariance matrix
+   * @param ZSig Reference to matrix to hold sigma points in measurement space
+   */
+  void PredictRadarMeasurement(Eigen::VectorXd &z_pred, Eigen::MatrixXd &S, Eigen::MatrixXd& ZSig);
+
+  /**
+   * Transforms the predicted state into the lidar measurement space.
+   * @param z_pred Reference to vector to store the mean predicted measurement
+   * @param S Reference to the matrix to store measurement covariance matrix
+   */
+  void PredictLidarMeasurement(Eigen::VectorXd &z_pred, Eigen::MatrixXd &S);
+
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
 
