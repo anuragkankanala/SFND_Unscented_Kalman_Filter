@@ -83,14 +83,15 @@ public:
    * @param S Reference to the matrix to store measurement covariance matrix
    * @param ZSig Reference to matrix to hold sigma points in measurement space
    */
-  void PredictRadarMeasurement(Eigen::VectorXd &z_pred, Eigen::MatrixXd &S, Eigen::MatrixXd& ZSig);
+  void PredictRadarMeasurement(Eigen::VectorXd &z_pred, Eigen::MatrixXd &S, Eigen::MatrixXd &ZSig);
 
   /**
    * Transforms the predicted state into the lidar measurement space.
    * @param z_pred Reference to vector to store the mean predicted measurement
    * @param S Reference to the matrix to store measurement covariance matrix
+   * @param ZSig Reference to matrix to hold sigma points in measurement space
    */
-  void PredictLidarMeasurement(Eigen::VectorXd &z_pred, Eigen::MatrixXd &S);
+  void PredictLidarMeasurement(Eigen::VectorXd &z_pred, Eigen::MatrixXd &S, Eigen::MatrixXd &ZSig);
 
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
