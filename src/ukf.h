@@ -1,6 +1,9 @@
 #ifndef UKF_H
 #define UKF_H
 
+#include <iostream>
+#include <fstream>
+#include <vector>
 #include "Eigen/Dense"
 #include "measurement_package.h"
 
@@ -10,7 +13,7 @@ public:
   /**
    * Constructor
    */
-  UKF();
+  UKF(bool logNIS = false);
 
   /**
    * Destructor
@@ -93,6 +96,24 @@ public:
    */
   void PredictLidarMeasurement(Eigen::VectorXd &z_pred, Eigen::MatrixXd &S, Eigen::MatrixXd &ZSig);
 
+  /**
+   * Calculates NIS for given values
+   * @param Z_Meas Reference to the actual measurement by the sensor
+   * @param Z_Pred Reference to the predicted measurement in sensor space
+   * @param S Referece to the measurement covariance matrix
+   */
+  double CalculateNIS(Eigen::VectorXd &Z_Meas, Eigen::VectorXd &Z_Pred, Eigen::MatrixXd &S);
+
+  /**
+   * Writes Radar NIS values to csv file
+   */
+  void WriteRadarNISToCSV();
+
+  /**
+   * Writes Lidar NIS values to csv file
+   */
+  void WriteLidarNISToCSV();
+
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
 
@@ -148,10 +169,17 @@ public:
   double lambda_;
 
   //Lidar measurement covariance matrix R
-  MatrixXd R_Laser_;
+  Eigen::MatrixXd R_Laser_;
 
   //Radar measurement covariance matrix R
-  MatrixXd R_Radar_;
+  Eigen::MatrixXd R_Radar_;
+
+  //Log NIS
+  bool logNIS_{false};
+  double radar_95_NIS_limit = 7.815;
+  double lidar_95_NIS_limit = 5.991;
+  std::vector<double> radar_NIS;
+  std::vector<double> lidar_NIS;
 };
 
 #endif // UKF_H

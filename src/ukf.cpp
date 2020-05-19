@@ -7,8 +7,9 @@ using Eigen::VectorXd;
 /**
  * Initializes Unscented Kalman filter
  */
-UKF::UKF()
+UKF::UKF(bool logNIS)
 {
+  logNIS_ = logNIS;
   // if this is false, laser measurements will be ignored (except during init)
   use_laser_ = true;
 
@@ -17,10 +18,10 @@ UKF::UKF()
 
   //TODO change these to get a suitable NIS value
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 0.5;
+  std_a_ = 2.5;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.5;
+  std_yawdd_ = 2.5;
 
   /**
    * DO NOT MODIFY measurement noise values below.
@@ -88,7 +89,11 @@ UKF::UKF()
   R_Laser_(1, 1) = std_laspy_ * std_laspy_;
 }
 
-UKF::~UKF() {}
+UKF::~UKF()
+{
+  WriteRadarNISToCSV();
+  WriteLidarNISToCSV();
+}
 
 void UKF::InitializeState(MeasurementPackage meas_package)
 {
@@ -369,6 +374,11 @@ void UKF::UpdateLidar(MeasurementPackage meas_package)
   // update state mean and covariance matrix
   x_ = x_ + K * z_diff;
   P_ = P_ - K * S * K.transpose();
+
+  if (logNIS_)
+  {
+    lidar_NIS.push_back(CalculateNIS(z_incoming, z_pred, S));
+  }
 }
 
 void UKF::PredictLidarMeasurement(Eigen::VectorXd &z_pred, Eigen::MatrixXd &S, Eigen::MatrixXd &ZSig)
@@ -450,6 +460,11 @@ void UKF::UpdateRadar(MeasurementPackage meas_package)
       x_diff(3) += 2. * M_PI;
 
     Tc = Tc + weights_(i) * x_diff * z_diff.transpose();
+
+    if (logNIS_)
+    {
+      radar_NIS.push_back(CalculateNIS(z_incoming, z_pred, S));
+    }
   }
 
   // Kalman gain K;
@@ -521,4 +536,54 @@ void UKF::PredictRadarMeasurement(Eigen::VectorXd &z_pred, Eigen::MatrixXd &S, E
 
   // add measurement noise covariance matrix
   S = S + R_Radar_;
+}
+
+double UKF::CalculateNIS(Eigen::VectorXd &Z_Meas, Eigen::VectorXd &Z_Pred, Eigen::MatrixXd &S)
+{
+  Eigen::VectorXd Z_Diff = Z_Meas - Z_Pred;
+  return Z_Diff.transpose() * S.inverse() * Z_Diff;
+}
+
+void UKF::WriteRadarNISToCSV()
+{
+  std::string fileName = "RadarNIS_stdA_" + std::to_string(std_a_) + "_stdYawDD_" + std::to_string(std_yawdd_) + ".csv";
+  std::ofstream fout;
+
+  fout.open(fileName, std::ofstream::out | std::ofstream::trunc);
+  fout << "Index"
+       << ", "
+       << "NIS"
+       << ", "
+       << "NIS 95% Threshold\n";
+
+  for (int i = 0; i < radar_NIS.size(); i++)
+  {
+    fout << (i + 1) << ", "
+         << radar_NIS.at(i) << ", "
+         << radar_95_NIS_limit << "\n";
+  }
+
+  fout.close();
+}
+
+void UKF::WriteLidarNISToCSV()
+{
+  std::string fileName = "LidarNIS_stdA_" + std::to_string(std_a_) + "_stdYawDD_" + std::to_string(std_yawdd_) + ".csv";
+  std::ofstream fout;
+
+  fout.open(fileName, std::ofstream::out | std::ofstream::trunc);
+  fout << "Index"
+       << ", "
+       << "NIS"
+       << ", "
+       << "NIS 95% Threshold\n";
+
+  for (int i = 0; i < lidar_NIS.size(); i++)
+  {
+    fout << (i + 1) << ", "
+         << lidar_NIS.at(i) << ", "
+         << lidar_95_NIS_limit << "\n";
+  }
+
+  fout.close();
 }

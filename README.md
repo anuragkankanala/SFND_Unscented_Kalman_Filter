@@ -3,7 +3,7 @@ Sensor Fusion UKF Highway Project Starter Code
 
 <img src="media/ukf_highway_tracked.gif" width="700" height="400" />
 
-In this project you will implement an Unscented Kalman Filter to estimate the state of multiple cars on a highway using noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower that the tolerance outlined in the project rubric. 
+Goal of this project is to implement an Unscented Kalman Filter to estimate the state of multiple cars on a highway using noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower that the tolerance outlined in the project rubric. 
 
 The main program can be built and ran by doing the following from the project top directory.
 
@@ -13,9 +13,6 @@ The main program can be built and ran by doing the following from the project to
 4. make
 5. ./ukf_highway
 
-Note that the programs that need to be written to accomplish the project are src/ukf.cpp, and src/ukf.h
-
-The program main.cpp has already been filled out, but feel free to modify it.
 
 <img src="media/ukf_highway.png" width="700" height="400" />
 
@@ -27,6 +24,16 @@ it's own UKF object generated for it, and will update each indidual one during e
 The red spheres above cars represent the (x,y) lidar detection and the purple lines show the radar measurements with the velocity magnitude along the detected angle. The Z axis is not taken into account for tracking, so you are only tracking along the X/Y axis.
 
 ---
+
+## NIS Results
+
+NIS calculation for several values of the acceleration noise (`std_a_`) and yaw acceleration noise(`std_ydd`) can be found in the nis_results folder.
+
+For std_a_ = 2.5 and std_ydd = 2.5, we get the following results with acceptable RMSE values.
+
+<img src="nis_results/lidar_nis_2.5_2.5.png" width="700" />
+
+<img src="nis_results/radar_nis_2.5_2.5.png" width="700" />
 
 ## Other Important Dependencies
 * cmake >= 3.5
@@ -48,29 +55,10 @@ The red spheres above cars represent the (x,y) lidar detection and the purple li
 3. Compile: `cmake .. && make`
 4. Run it: `./ukf_highway`
 
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html) as much as possible.
 
 ## Generating Additional Data
-
-This is optional!
 
 If you'd like to generate your own radar and lidar modify the code in `highway.h` to alter the cars. Also check out `tools.cpp` to
 change how measurements are taken, for instance lidar markers could be the (x,y) center of bounding boxes by scanning the PCD environment
 and performing clustering. This is similar to what was done in Sensor Fusion Lidar Obstacle Detection.
 
-## Project Instructions and Rubric
-
-This information is only accessible by people who are already enrolled in Sensor Fusion. 
-If you are enrolled, see the project page in the classroom
-for instructions and the project rubric.
